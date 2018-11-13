@@ -1,12 +1,12 @@
-var mongoose = require('mongoose'); 
+const mongoose = require('mongoose'); 
 const Schema = mongoose.Schema;
 
 var ProfileSchema = new Schema({
-  profile: String,
   user: {
     type: Schema.Types.ObjectId,
     ref: 'user'
-   },
+    },
+  profile: String,
 });
 
-module.exports = mongoose.model('Profile', ProfileSchema);
+module.exports = mongoose.model('profile', ProfileSchema);

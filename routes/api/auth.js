@@ -5,7 +5,10 @@ const bcrypt = require('bcryptjs');
 
 const config = require('../../config/keys'); // get config file
 const VerifyToken = require('../../auth/VerifyToken');
+
+// load models
 const User = require('../../models/UserModel');
+const Profile = require('../../models/ProfileModel');
 
 router.post('/register', function(req, res) {
     const errors = {};
@@ -70,12 +73,61 @@ router.post('/login', function(req, res){
         });
 });
 
+
 router.get('/cur',VerifyToken, function(req, res){
     User.findById(req.userId, { password: 0 },function (err, user) {
         if (err) return res.status(500).send("There was a problem finding the user.");
         if (!user) return res.status(404).send("No user found.");
+
         res.status(200).send(user);
     });
+});
+
+
+// profile create new or update
+router.post('/profile', VerifyToken, function (req, res) {
+    Profile.findOne({user: req.userId})
+        .then(profile =>{
+            if(profile){
+                Profile.findOneAndUpdate(
+                    { user: req.userId },
+                    { $set: { profile: req.body.profile} },
+                    {new: true})
+                        .then(profile => res.json(profile));
+            }else{
+                //save new profile
+                new Profile({
+                    user: req.userId,
+                    profile:req.body.profile
+                }).save().then(profile => res.json(profile));
+            }
+        });
+});
+
+//get user profile
+router.get('/profile', VerifyToken, function(req, res){
+    const errors = {};
+    Profile.findOne({user: req.userId})
+        .then(profile =>{
+            if(!profile){
+                errors.noprofile = "no profile";
+                return res.status(404).json(errors);
+            }else{
+                res.json(profile);
+            }
+        }).catch(err => res.status(404).json(errors));
+})
+
+router.delete('/profile', VerifyToken, function(req,res){
+    const errors = {};
+    Profile.findOneAndRemove({user: req.userId})
+        .then(profile=>{
+            if(!profile){
+                errors.noprofile = "no profile";
+                return res.status(404).json(errors);
+            }
+            res.json({success: true});
+        }).catch(err => res.status(404).json(err))
 });
 
 module.exports = router;
